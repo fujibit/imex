@@ -1,0 +1,73 @@
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image
+import pytesseract
+
+class OCRApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("OCR GUI")
+
+        self.label = tk.Label(root, text="Select an image file:")
+        self.label.pack()
+
+        self.select_button = tk.Button(root, text="Select Image", command=self.select_image)
+        self.select_button.pack()
+
+        self.result_text = tk.Text(root, wrap=tk.WORD)
+        self.result_text.pack()
+
+        self.extract_button = tk.Button(root, text="Extract TrxIDs", command=self.extract_trxids)
+        self.extract_button.pack()
+
+        self.file_path = ""
+        self.image = None
+
+        pytesseract.pytesseract.tesseract_cmd = r'C:\ocr\tesseract.exe'
+
+    def select_image(self):
+        self.file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp *.gif *.tiff")])
+        if self.file_path:
+            self.label.config(text=f"Selected: {self.file_path}")
+            self.image = Image.open(self.file_path)
+
+    def extract_trxids(self):
+        if self.image:
+            text = pytesseract.image_to_string(self.image)
+
+            fw = open("smss.txt", "w")
+            fw.write(text)
+            fw.close()
+
+            f = open("smss.txt", "r")
+
+            lines = []
+            words = []
+            tag = "TrxID"
+
+            for x in f:
+                a = x.split()
+                lines.append(a)
+
+            for i in range(len(lines)):
+                a = lines[i]
+                for j in range(len(a)):
+                    b = lines[i][j]
+                    words.append(b)
+
+            trx_ids = []
+            for x in words:
+                if tag in x:
+                    a = words.index(x) + 1
+                    trx_id = words[a]
+                    trx_ids.append(trx_id)
+
+            self.result_text.delete("1.0", tk.END)
+            for trx_id in trx_ids:
+                self.result_text.insert(tk.END, f"TrxID: {trx_id}\n")
+
+if __name__ == "__main__":
+    
+    root = tk.Tk()
+    app = OCRApp(root)
+    root.mainloop()
